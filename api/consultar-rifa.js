@@ -2,9 +2,12 @@ import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 function generateRaffleNumbers(quantity) {
     const numbers = new Set();
-    while (numbers.size < quantity) numbers.add(Math.floor(100000 + Math.random() * 900000));
+    while (numbers.size < quantity) {
+        numbers.add(Math.floor(100000 + Math.random() * 900000));
+    }
     return Array.from(numbers);
 }
+
 function getQuantityByAmount(amount) {
     const map = { '5.00': 1, '10.00': 3, '20.00': 7, '50.00': 20 };
     return map[parseFloat(amount).toFixed(2)] || 0;
@@ -13,7 +16,9 @@ function getQuantityByAmount(amount) {
 export default async function handler(req, res) {
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     const paymentId = req.query.id;
-    if (!accessToken || !paymentId) return res.status(400).json({ error: 'Dados insuficientes.' });
+    if (!accessToken || !paymentId) {
+        return res.status(400).json({ error: 'Dados insuficientes.' });
+    }
 
     try {
         const client = new MercadoPagoConfig({ accessToken });
@@ -30,4 +35,4 @@ export default async function handler(req, res) {
         console.error('Erro ao consultar pagamento:', error);
         res.status(500).json({ error: 'Falha ao consultar o pagamento.' });
     }
-};
+} // << AQUI ESTAVA O ERRO. O PONTO E VÍRGULA FOI REMOVIDO.

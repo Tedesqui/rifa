@@ -1,0 +1,7 @@
+{
+  "name": "rifa-final-vercel",
+  "version": "1.0.0",
+  "dependencies": {
+    "mercadopago": "^3.0.0"
+  }
+}

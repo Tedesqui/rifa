@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagamento Aprovado!</title>
+    <style>
+        :root {
+            --primary-color: #009ee3;
+            --dark-text: #333;
+            --background-color: #f4f4f9;
+            --highlight-color: #ffc107;
+            --numbers-container-color: #e0f7ff;
+            --numbers-text-color: #007bb5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--dark-text);
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+                min-height: auto;
+                padding: 20px;
+                max-width: none;
+                box-sizing: border-box;
+            }
+        }
+        .main-container-success {
+            margin-top: -50px;
+        }
+        h1 {
+            color: #27ae60;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: var(--dark-text);
+        }
+        .numbers-container {
+            background-color: var(--numbers-container-color);
+            border: 2px solid var(--numbers-text-color);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(0, 158, 227, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 158, 227, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 158, 227, 0); }
+        }
+        #numbers {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--numbers-text-color);
+            margin: 0;
+            word-wrap: break-word;
+        }
+        .results-container { 
+            margin-top: 40px; 
+            padding: 20px; 
+            border: 2px dashed var(--primary-color); 
+            border-radius: 10px; 
+        }
+        #countdown { 
+            font-size: 2.5em; 
+            font-weight: bold; 
+            margin: 10px 0; 
+            color: var(--primary-color); 
+        }
+        .winner-number { 
+            font-size: 2em; 
+            font-weight: bold; 
+            color: #27ae60; 
+        }
+        .message {
+            margin-top: 20px;
+        }
+        .return-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: background-color 0.3s;
+        }
+        .return-button:hover {
+            background-color: #007bb5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container main-container-success">
+        <h1>✅ Pagamento Aprovado!</h1>
+        <p>Seus números foram gerados com sucesso.</p>
+        <div class="numbers-container">
+            <p>Seus Números:</p>
+            <p id="numbers">--</p>
+        </div>
+        <p class="message">Guarde bem esses números! Boa sorte!</p>
+    </div>
+
+    <div class="container">
+        <h2>🏆 Sorteio Diário 🏆</h2>
+        <div class="results-container">
+            <p>O sorteio acontece todos os dias! Contagem decrescente para as <strong>20:00h</strong>:</p>
+            <div id="countdown">--:--:--</div>
+            <p>Número Vencedor de Hoje:</p>
+            <div class="winner-number">Aguardando...</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const numbers = params.get('numbers');
+            if (numbers) {
+                document.getElementById('numbers').textContent = numbers.split(',').join(' ');
+            }
+            startDailyCountdown();
+            updateWinnerNumber();
+        });
+
+        function startDailyCountdown() {
+            const countdownElement = document.getElementById('countdown');
+            setInterval(() => {
+                const now = new Date();
+                let target = new Date(now);
+                target.setHours(20, 0, 0, 0);
+                if (now > target) {
+                    target.setDate(target.getDate() + 1);
+                }
+                const distance = target - now;
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                countdownElement.innerHTML = `${(hours < 10 ? '0' : '')}${hours}:${(minutes < 10 ? '0' : '')}${minutes}:${(seconds < 10 ? '0' : '')}${seconds}`;
+            }, 1000);
+        }
+
+        async function updateWinnerNumber() {
+            try {
+                const response = await fetch('/api/get-winner');
+                const data = await response.json();
+                if (response.ok) {
+                    document.querySelector('.winner-number').textContent = data.number;
+                }
+            } catch (error) {
+                console.error("Failed to fetch winner number:", error);
+            }
+        }
+        
+        setInterval(updateWinnerNumber, 10000);
+    </script>
+</body>
+</html>

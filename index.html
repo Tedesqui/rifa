@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rifa Online</title>
+    <style>
+        :root { --primary-color: #009ee3; --dark-text: #333; --background-color: #f4f4f9; --highlight-color: #ffc107; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--background-color); color: var(--dark-text); margin: 0; padding: 0; box-sizing: border-box; }
+        
+        .container { 
+            background-color: #ffffff; 
+            padding: 30px 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+            text-align: center; 
+            max-width: 600px; 
+            margin: 20px auto; 
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+                padding: 20px;
+                max-width: none;
+                box-sizing: border-box;
+            }
+            .options-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        h1, h2 { color: var(--dark-text); }
+        .options-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 20px; }
+        .option-card { border: 2px solid transparent; padding: 20px; border-radius: 10px; cursor: pointer; background-color: var(--primary-color); color: #ffffff; position: relative; transition: transform 0.2s; }
+        .option-card:hover { transform: translateY(-5px); }
+        .option-card h3 { font-size: 1.8em; margin-top: 0; }
+        .option-card .price { font-size: 2.2em; font-weight: bold; margin: 10px 0; }
+        .option-card.recommended { border-color: var(--highlight-color); animation: pulse-border 2s infinite; }
+        .badge { position: absolute; top: -1px; right: -1px; background-color: var(--highlight-color); color: var(--dark-text); padding: 5px 15px; font-size: 0.8em; font-weight: bold; border-bottom-left-radius: 10px; }
+        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(255,193,7,.7); } 70% { box-shadow: 0 0 0 10px rgba(255,193,7,0); } 100% { box-shadow: 0 0 0 0 rgba(255,193,7,0); } }
+        
+        .results-container { margin-top: 40px; padding: 20px; border: 2px dashed var(--primary-color); border-radius: 10px; }
+        #countdown { font-size: 2.5em; font-weight: bold; margin: 10px 0; color: var(--primary-color); }
+        .winner-number { font-size: 2em; font-weight: bold; color: #27ae60; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center; position: relative; }
+        .close-button { position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; }
+        #payment-status { margin-top: 15px; font-weight: bold; }
+        .loader { border: 4px solid #f3f3f3; border-radius: 50%; border-top: 4px solid var(--primary-color); width: 20px; height: 20px; animation: spin 2s linear infinite; display: inline-block; vertical-align: middle; margin-right: 10px;}
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #email-form-group { margin-bottom: 20px; }
+        #email-form-group input { width: 100%; padding: 10px; box-sizing: border-box; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        #email-form-group button { width: 100%; padding: 12px; margin-top: 15px; background-color: var(--primary-color); color: white; border: none; border-radius: 5px; font-size: 1.1em; cursor: pointer; transition: background-color 0.3s; }
+        #email-form-group button:hover { background-color: #007bb5; }
+        
+        .pix-code-container { display: none; }
+        .pix-code-container img { width: 100%; max-width: 250px; }
+        .pix-code-container input { width: 90%; padding: 10px; text-align: center; }
+        .copy-button { background-color: var(--primary-color); color: white; border: none; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 10px 2px; cursor: pointer; border-radius: 5px; }
+
+        #copy-message { margin-top: 10px; color: green; font-weight: bold; display: none; }
+
+        .email-message { font-style: italic; font-size: 0.9em; color: #555; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rifa Online Especial!</h1>
+        <p>Escolha uma opção, pague com PIX e aguarde a confirmação automática para ver os seus números!</p>
+        <div class="options-container">
+            <div class="option-card" onclick="openPixModal(5.00)"><h3>1 Número</h3><div class="price">R$ 5,00</div></div>
+            <div class="option-card" onclick="openPixModal(10.00)"><h3>3 Números</h3><div class="price">R$ 10,00</div></div>
+            <div class="option-card recommended" onclick="openPixModal(20.00)"><div class="badge">Mais Popular</div><h3>7 Números</h3><div class="price">R$ 20,00</div></div>
+            <div class="option-card" onclick="openPixModal(50.00)"><h3>20 Números</h3><div class="price">R$ 50,00</div></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🏆 Sorteio Diário 🏆</h2>
+        <div class="results-container">
+            <p>O sorteio acontece todos os dias! O número vencedor de hoje será revelado às <strong>20:00h</strong>:</p>
+            <p>Número Vencedor de Hoje:</p>
+            <div class="winner-number">Aguardando...</div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="pix-modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closePixModal()">&times;</span>
+            <div id="email-form-group">
+                <h2>Insira seu E-mail</h2>
+                <p><strong>Entraremos em contato através desse e-mail em caso de vitória.</strong></p>
+                <input type="email" id="user-email" placeholder="Seu e-mail aqui" required>
+                <button onclick="generatePix()">Continuar</button>
+            </div>
+            
+            <div id="pix-payment-group" style="display: none;">
+                <h2>Pague com PIX para participar</h2>
+                <img id="qr-code-image" src="" style="width:100%; max-width:250px;">
+                <p><strong>PIX Copia e Cola:</strong></p>
+                <input type="text" id="pix-code" readonly style="width: 90%; padding: 10px; text-align: center;">
+                <button class="copy-button" onclick="copyPixCode()">Copiar Código PIX</button>
+                <div id="copy-message">Código copiado com sucesso!</div>
+                <hr>
+                <div id="payment-status">
+                    <div class="loader"></div>
+                    A aguardar confirmação do pagamento...
+                </div>
+                <p style="font-weight: bold;">Não feche esta janela. Será redirecionado automaticamente após o pagamento ser aprovado.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let paymentCheckInterval;
+        let currentAmount;
+        let currentEmail;
+
+        function openPixModal(amount) {
+            currentAmount = amount;
+            document.getElementById('pix-modal').style.display = 'flex';
+            document.getElementById('email-form-group').style.display = 'block';
+            document.getElementById('pix-payment-group').style.display = 'none';
+        }
+
+        async function generatePix() {
+            const emailInput = document.getElementById('user-email');
+            currentEmail = emailInput.value;
+            
+            if (!currentEmail || !validateEmail(currentEmail)) {
+                alert('Por favor, insira um e-mail válido.');
+                return;
+            }
+
+            document.getElementById('email-form-group').style.display = 'none';
+            document.getElementById('pix-payment-group').style.display = 'block';
+            document.getElementById('payment-status').innerHTML = '<div class="loader"></div>A aguardar confirmação do pagamento...';
+
+            try {
+                const response = await fetch('/api/create-payment', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ amount: currentAmount, email: currentEmail }), 
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('qr-code-image').src = `data:image/png;base64,${data.qr_code_base64}`;
+                    document.getElementById('pix-code').value = data.qr_code;
+                    currentPaymentId = data.payment_id;
+                    startPaymentCheck(currentPaymentId);
+                } else {
+                    document.getElementById('payment-status').innerHTML = `<p style="color: red;">Erro ao gerar PIX: ${data.error || 'Tente novamente'}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('payment-status').innerHTML = `<p style="color: red;">Erro de comunicação com o servidor. Tente novamente.</p>`;
+            }
+        }
+
+        function validateEmail(email) {
+            const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(String(email).toLowerCase());
+        }
+
+        function startPaymentCheck(paymentId) {
+            if (paymentCheckInterval) clearInterval(paymentCheckInterval);
+
+            paymentCheckInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/consultar-rifa?id=${paymentId}`);
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        clearInterval(paymentCheckInterval);
+                        document.getElementById('payment-status').innerHTML = `<p style="color: green;">Pagamento Aprovado! Redirecionando...</p>`;
+                        window.location.href = `/success.html?numbers=${data.numbers.join(',')}`;
+                    }
+                } catch (error) {
+                    console.error("Erro na verificação do pagamento, a tentar novamente...");
+                }
+            }, 5000);
+        }
+
+        function closePixModal() {
+            document.getElementById('pix-modal').style.display='none';
+            if (paymentCheckInterval) {
+                clearInterval(paymentCheckInterval);
+            }
+        }
+
+        function copyPixCode() {
+            const pixCodeInput = document.getElementById('pix-code');
+            pixCodeInput.select();
+            pixCodeInput.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(pixCodeInput.value)
+                .then(() => {
+                    const message = document.getElementById('copy-message');
+                    message.style.display = 'block';
+                    setTimeout(() => {
+                        message.style.display = 'none';
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Falha ao copiar o texto: ', err);
+                });
+        }
+
+        async function updateWinnerNumber() {
+            try {
+                const response = await fetch('/api/get-winner');
+                const data = await response.json();
+                if (response.ok) {
+                    document.querySelector('.winner-number').textContent = data.number;
+                }
+            } catch (error) {
+                console.error("Failed to fetch winner number:", error);
+            }
+        }
+
+        window.onload = function() {
+            updateWinnerNumber();
+            setInterval(updateWinnerNumber, 10000);
+        };
+    </script>
+</body>
+</html>

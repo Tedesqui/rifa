@@ -12,26 +12,30 @@ function getQuantityByAmount(amount) {
     return map[parseFloat(amount).toFixed(2)] || 0;
 }
 
-export default async function handler(req, res) {
+export default async function handler(request, response) {
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-    const paymentId = req.query.id;
+    const paymentId = request.query.id;
+
     if (!accessToken || !paymentId) {
-        return res.status(400).json({ error: 'Dados insuficientes.' });
+        return response.status(400).json({ error: 'Dados insuficientes ou configuração do servidor ausente.' });
     }
 
+    const client = new MercadoPagoConfig({ accessToken });
+    const payment = new Payment(client);
+
     try {
-        const client = new MercadoPagoConfig({ accessToken });
-        const payment = new Payment(client);
         const paymentDetails = await payment.get({ id: Number(paymentId) });
 
         if (paymentDetails.status === 'approved') {
             const quantity = getQuantityByAmount(paymentDetails.transaction_amount);
             const numbers = generateRaffleNumbers(quantity);
-            return res.status(200).json({ status: 'approved', numbers: numbers });
+            return response.status(200).json({ status: 'approved', numbers: numbers });
         }
-        return res.status(200).json({ status: paymentDetails.status });
+        
+        return response.status(200).json({ status: paymentDetails.status });
+
     } catch (error) {
         console.error('Erro ao consultar pagamento:', error);
-        res.status(500).json({ error: 'Falha ao consultar o pagamento.' });
+        return response.status(500).json({ error: 'Falha ao consultar o pagamento.' });
     }
 }

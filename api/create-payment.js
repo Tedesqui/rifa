@@ -1,38 +1,56 @@
-// /api/create-payment.js
-
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
-export default async function handler(req, res) {
+export default async function handler(request, response) {
+    if (request.method !== 'POST') {
+        return response.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    // ADAPTADO: Recebemos 'amount' e 'email' do seu frontend
+    const { amount, email } = request.body;
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-    if (!accessToken) return res.status(500).json({ error: 'Token do MP não configurado.' });
+
+    // ADAPTADO: Verificamos 'amount'
+    if (!accessToken || !amount || !email) {
+        return response.status(400).json({ error: 'Dados insuficientes: amount, email ou configuração do servidor ausente.' });
+    }
     
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const client = new MercadoPagoConfig({ accessToken });
+    const payment = new Payment(client);
 
     try {
-        const { amount, email } = req.body;
-        const client = new MercadoPagoConfig({ accessToken });
-        const payment = new Payment(client);
-        const result = await payment.create({
+        const paymentData = {
             body: {
+                // ADAPTADO: Usamos o valor dinâmico da rifa
                 transaction_amount: Number(amount),
-                description: `Rifa Online - Valor R$ ${Number(amount).toFixed(2)}`,
+                // ADAPTADO: Usamos uma descrição dinâmica
+                description: `Pagamento Rifa Online - Valor R$ ${Number(amount).toFixed(2)}`,
                 payment_method_id: 'pix',
-                payer: { email: email },
-                date_of_expiration: new Date(Date.now() + 10 * 60 * 1000).toISOString().replace("Z", "-03:00"),
+                payer: {
+                    email: email,
+                },
             }
-        });
-        const pixData = result.point_of_interaction?.transaction_data;
-        if (!pixData) throw new Error("Dados do PIX não retornados pela API.");
+        };
 
-        res.status(201).json({
-            payment_id: result.id,
-            // CORREÇÃO: Enviando no formato camelCase que o frontend espera
-            qrCodeBase64: pixData.qr_code_base64,
+        const result = await payment.create(paymentData);
+        const pixData = result.point_of_interaction?.transaction_data;
+
+        if (!pixData) {
+            throw new Error("A API de Pagamento não retornou os dados do PIX.");
+        }
+        
+        // ADAPTADO: Retornamos os dados no formato que seu frontend (index.html) espera
+        response.status(201).json({ 
+            payment_id: result.id, // Adicionado o ID para a consulta
             qr_code: pixData.qr_code,
+            qrCodeBase64: pixData.qr_code_base64,
         });
+
     } catch (error) {
         console.error("Erro ao criar pagamento:", error);
-        res.status(500).json({ error: 'Falha ao processar o pagamento.' });
+        const errorMessage = error.cause?.api_response?.data?.message || error.message;
+        response.status(500).json({ 
+            error: 'Falha ao criar pagamento.',
+            details: errorMessage 
+        });
     }
-}
 }

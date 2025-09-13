@@ -1,3 +1,5 @@
+// /api/create-payment.js
+
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 export default async function handler(req, res) {
@@ -24,11 +26,13 @@ export default async function handler(req, res) {
 
         res.status(201).json({
             payment_id: result.id,
-            qr_code_base_64: pixData.qr_code_base64,
+            // CORREÇÃO: Enviando no formato camelCase que o frontend espera
+            qrCodeBase64: pixData.qr_code_base64,
             qr_code: pixData.qr_code,
         });
     } catch (error) {
         console.error("Erro ao criar pagamento:", error);
         res.status(500).json({ error: 'Falha ao processar o pagamento.' });
     }
+}
 }

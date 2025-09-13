@@ -1,8 +1,10 @@
 {
-  "name": "rifa-final-2",
+  "name": "rifa-final-segura",
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "mercadopago": "^2.0.0"
+    "@vercel/kv": "^2.0.0",
+    "mercadopago": "^2.0.0",
+    "uuid": "^10.0.0"
   }
 }

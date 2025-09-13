@@ -19,6 +19,13 @@
         .badge { position: absolute; top: -1px; right: -1px; background-color: var(--highlight-color); color: var(--dark-text); padding: 5px 15px; font-size: 0.8em; font-weight: bold; border-bottom-left-radius: 10px; }
         @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(255,193,7,.7); } 70% { box-shadow: 0 0 0 10px rgba(255,193,7,0); } 100% { box-shadow: 0 0 0 0 rgba(255,193,7,0); } }
         .results-container { margin-top: 40px; padding: 20px; border: 2px dashed var(--primary-color); border-radius: 10px; }
+        /* CSS PARA A CONTAGEM REGRESSIVA */
+        #countdown { 
+            font-size: 2.5em; 
+            font-weight: bold; 
+            margin: 10px 0; 
+            color: var(--primary-color); 
+        }
         .winner-number { font-size: 2em; font-weight: bold; color: #27ae60; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; text-align: center; position: relative; max-height: 80vh; overflow-y: auto; }
@@ -32,13 +39,11 @@
         #email-form-group button:hover { background-color: #007bb5; }
         .copy-button { background-color: var(--primary-color); color: white; border: none; padding: 10px 20px; text-align: center; font-size: 16px; margin: 10px 2px; cursor: pointer; border-radius: 5px; }
         #copy-message { margin-top: 10px; color: green; font-weight: bold; display: none; }
-        /* BOTÃO PARA VER NÚMEROS */
         .my-numbers-button {
             background-color: #28a745; color: white; border: none; padding: 10px 20px;
             font-size: 1em; border-radius: 8px; cursor: pointer; margin-top: 20px;
             display: none; /* Começa escondido */
         }
-        /* ESTILOS PARA O MODAL DE NÚMEROS SALVOS */
         .ticket-list { list-style-type: none; padding: 0; margin-top: 20px; }
         .ticket-item { background-color: #f4f4f9; border-left: 5px solid var(--primary-color); margin-bottom: 15px; padding: 15px; text-align: left; border-radius: 5px; }
         .ticket-item .date { font-size: 0.8em; color: #666; }
@@ -48,7 +53,7 @@
 <body>
     <div class="container">
         <h1>Rifa Online Especial!</h1>
-        <p>Escolha uma opção, pague com PIX e se acertar o número sorteado receba 10 VEZES o valor que apostou!</p>
+        <p><strong>Escolha uma opção, pague com PIX e se acertar o número sorteado receba 10 VEZES o valor que apostou!</strong></p>
         <div class="options-container">
             <div class="option-card" onclick="openPixModal(5.00)"><h3>1 Número</h3><div class="price">R$ 5,00</div></div>
             <div class="option-card" onclick="openPixModal(10.00)"><h3>3 Números</h3><div class="price">R$ 10,00</div></div>
@@ -60,7 +65,9 @@
     <div class="container">
         <h2>🏆 Sorteio Diário 🏆</h2>
         <div class="results-container">
-            <p>O número vencedor de hoje será revelado às <strong>20:00h</strong>:</p>
+            <p>O sorteio acontece todos os dias! Contagem regressiva para as <strong>20:00h</strong>:</p>
+            <div id="countdown">--:--:--</div>
+            <p>Número Vencedor de Hoje:</p>
             <div class="winner-number">Aguardando...</div>
         </div>
     </div>
@@ -96,8 +103,7 @@
             <span class="close-button" onclick="closeMyNumbersModal()">&times;</span>
             <h2>Seus Bilhetes Salvos</h2>
             <div id="my-tickets-container">
-                <ul class="ticket-list" id="ticket-list-ul">
-                    </ul>
+                <ul class="ticket-list" id="ticket-list-ul"></ul>
             </div>
         </div>
     </div>
@@ -105,14 +111,11 @@
     <script>
         let paymentCheckInterval, currentAmount, currentEmail, currentPaymentId;
 
-        // FUNÇÃO DO MODAL DE PAGAMENTO CORRIGIDA
         function openPixModal(amount) {
             currentAmount = amount;
             document.getElementById('pix-modal').style.display = 'flex';
-            // Garante que o formulário de email sempre apareça primeiro
             document.getElementById('email-form-group').style.display = 'block';
             document.getElementById('pix-payment-group').style.display = 'none';
-            // Limpa o campo de e-mail para novas compras
             const emailInput = document.getElementById('user-email');
             if(emailInput) emailInput.value = '';
         }
@@ -189,7 +192,6 @@
             });
         }
 
-        // Funções para o Modal "Meus Números"
         function showMyNumbers() {
             const tickets = JSON.parse(localStorage.getItem('meusBilhetes')) || [];
             const listElement = document.getElementById('ticket-list-ul');
@@ -226,8 +228,30 @@
                 console.error("Erro ao buscar número do dia.");
             }
         }
+        
+        // FUNÇÃO DA CONTAGEM REGRESSIVA ADICIONADA
+        function startDailyCountdown() {
+            const countdownElement = document.getElementById('countdown');
+            if (!countdownElement) return;
+
+            setInterval(() => {
+                const now = new Date();
+                let target = new Date(now);
+                target.setHours(20, 0, 0, 0);
+                if (now > target) {
+                    target.setDate(target.getDate() + 1);
+                }
+                const distance = target - now;
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                countdownElement.innerHTML = `${(hours < 10 ? '0' : '')}${hours}:${(minutes < 10 ? '0' : '')}${minutes}:${(seconds < 10 ? '0' : '')}${seconds}`;
+            }, 1000);
+        }
 
         window.onload = () => {
+            // CHAMADA DA FUNÇÃO DA CONTAGEM REGRESSIVA
+            startDailyCountdown();
             updateWinnerNumber();
             setInterval(updateWinnerNumber, 30000);
             

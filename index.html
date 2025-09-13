@@ -119,6 +119,7 @@
         let paymentCheckInterval;
         let currentAmount;
         let currentEmail;
+        let currentPaymentId; // Adicionado para guardar o ID do pagamento
 
         function openPixModal(amount) {
             currentAmount = amount;
@@ -149,7 +150,7 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    document.getElementById('qr-code-image').src = `data:image/png;base64,${data.qr_code_base64}`;
+                    document.getElementById('qr-code-image').src = `data:image/png;base64,${data.qrCodeBase64}`;
                     document.getElementById('pix-code').value = data.qr_code;
                     currentPaymentId = data.payment_id;
                     startPaymentCheck(currentPaymentId);
@@ -174,13 +175,16 @@
                     const response = await fetch(`/api/consultar-rifa?id=${paymentId}`);
                     const data = await response.json();
                     
-                    if (response.ok) {
+                    if (data.status === 'approved') {
                         clearInterval(paymentCheckInterval);
                         document.getElementById('payment-status').innerHTML = `<p style="color: green;">Pagamento Aprovado! Redirecionando...</p>`;
-                        window.location.href = `/success.html?numbers=${data.numbers.join(',')}`;
+                        
+                        setTimeout(() => {
+                            window.location.href = `/success.html?numbers=${data.numbers.join(',')}`;
+                        }, 2000); 
                     }
                 } catch (error) {
-                    console.error("Erro na verificação do pagamento, a tentar novamente...");
+                    console.error("Erro na verificação do pagamento, tentando novamente...");
                 }
             }, 5000);
         }

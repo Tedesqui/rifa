@@ -7,7 +7,6 @@ function generateRaffleNumbers(quantity) {
     }
     return Array.from(numbers);
 }
-
 function getQuantityByAmount(amount) {
     const map = { '5.00': 1, '10.00': 3, '20.00': 7, '50.00': 20 };
     return map[parseFloat(amount).toFixed(2)] || 0;
@@ -35,4 +34,4 @@ export default async function handler(req, res) {
         console.error('Erro ao consultar pagamento:', error);
         res.status(500).json({ error: 'Falha ao consultar o pagamento.' });
     }
-} // << AQUI ESTAVA O ERRO. O PONTO E VÍRGULA FOI REMOVIDO.
+}

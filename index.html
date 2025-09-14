@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rifa Online</title>
-    <style>
+    <style>/* Seus estilos permanecem os mesmos */
         :root { --primary-color: #009ee3; --dark-text: #333; --background-color: #f4f4f9; --highlight-color: #ffc107; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--background-color); color: var(--dark-text); margin: 0; padding: 0; box-sizing: border-box; }
         .container { background-color: #ffffff; padding: 30px 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; max-width: 600px; margin: 20px auto; }
@@ -60,13 +60,11 @@
             <div class="winner-number">Aguardando...</div>
         </div>
     </div>
-
-    <div class="modal-overlay" id="pix-modal">
-        </div>
+    <div class="modal-overlay" id="pix-modal"></div>
     <div class="modal-overlay" id="my-numbers-modal">
         <div class="modal-content">
             <span class="close-button" onclick="closeMyNumbersModal()">&times;</span>
-            <h2>Seus Bilhetes Salvos</h2>
+            <h2>Seus Bilhetes Válidos</h2>
             <div id="my-tickets-container">
                 <ul class="ticket-list" id="ticket-list-ul"></ul>
             </div>
@@ -75,112 +73,60 @@
 
     <script>
         let paymentCheckInterval, currentAmount, currentEmail, currentPaymentId;
+        let validTicketsFromServer = []; // Armazena os bilhetes válidos
 
-        // ATUALIZAÇÃO: Funções `showMyNumbers` e `window.onload` agora filtram por data
-        function showMyNumbers() {
-            const allTickets = JSON.parse(localStorage.getItem('meusBilhetes')) || [];
-            const todayString = new Date().toISOString().split('T')[0];
+        // NOVO: Ao carregar a página, busca a sessão e os bilhetes válidos
+        window.onload = async () => {
+            startDailyCountdown();
+            updateWinnerNumber();
+            setInterval(updateWinnerNumber, 30000);
             
-            // Filtra para mostrar apenas os bilhetes comprados hoje
-            const todaysTickets = allTickets.filter(ticket => ticket.date === todayString);
+            try {
+                const response = await fetch('/api/session');
+                const data = await response.json();
+                if (response.ok) {
+                    validTicketsFromServer = data.validTickets || [];
+                    if (validTicketsFromServer.length > 0) {
+                        document.getElementById('show-my-numbers-btn').style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error("Erro ao iniciar sessão:", error);
+            }
+        };
 
+        // NOVO: Mostra os bilhetes que já foram carregados do servidor
+        function showMyNumbers() {
             const listElement = document.getElementById('ticket-list-ul');
             listElement.innerHTML = ''; 
 
-            if (todaysTickets.length === 0) {
-                listElement.innerHTML = '<p>Você não comprou números para o sorteio de hoje.</p>';
+            if (validTicketsFromServer.length === 0) {
+                listElement.innerHTML = '<p>Você não tem números válidos para o sorteio de hoje.</p>';
             } else {
-                todaysTickets.forEach(ticket => {
+                validTicketsFromServer.forEach(ticket => {
                     const item = document.createElement('li');
                     item.className = 'ticket-item';
-                    item.innerHTML = `<div class="numbers">${ticket.numbers.join(' - ')}</div>`;
+                    const purchaseTime = new Date(ticket.purchaseTimestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    item.innerHTML = `
+                        <div class="date">Comprado hoje às ${purchaseTime}</div>
+                        <div class="numbers">${ticket.numbers.join(' - ')}</div>
+                    `;
                     listElement.appendChild(item);
                 });
             }
             document.getElementById('my-numbers-modal').style.display = 'flex';
         }
-
-        window.onload = () => {
-            startDailyCountdown();
-            updateWinnerNumber();
-            setInterval(updateWinnerNumber, 30000);
-            
-            // ATUALIZAÇÃO: Verifica se há bilhetes de HOJE para mostrar o botão
-            const allTickets = JSON.parse(localStorage.getItem('meusBilhetes')) || [];
-            const todayString = new Date().toISOString().split('T')[0];
-            const todaysTickets = allTickets.filter(ticket => ticket.date === todayString);
-
-            if (todaysTickets.length > 0) {
-                document.getElementById('show-my-numbers-btn').style.display = 'block';
-            }
-        };
-
-        // --- OUTRAS FUNÇÕES (sem alterações) ---
-        function openPixModal(amount) {
-            currentAmount = amount;
-            if(!document.getElementById('pix-modal').innerHTML.trim()) {
-                document.getElementById('pix-modal').innerHTML = `
-                <div class="modal-content">
-                    <span class="close-button" onclick="closePixModal()">&times;</span>
-                    <div id="email-form-group"><h2>Insira seu E-mail</h2><p><strong>Entraremos em contato através desse e-mail em caso de vitória.</strong></p><input type="email" id="user-email" placeholder="Seu e-mail aqui" required><button onclick="generatePix()">Continuar</button></div>
-                    <div id="pix-payment-group" style="display: none;"><h2>Pague com PIX para participar</h2><img id="qr-code-image" src="" style="width:100%; max-width:250px;"><p><strong>PIX Copia e Cola:</strong></p><input type="text" id="pix-code" readonly style="width: 90%; padding: 10px; text-align: center;"><button class="copy-button" onclick="copyPixCode()">Copiar Código PIX</button><div id="copy-message" style="display: none;">Código copiado!</div><hr><div id="payment-status"><div class="loader"></div>Aguardando confirmação...</div><p style="font-weight: bold;">Não feche esta janela.</p></div>
-                </div>`;
-            }
-            document.getElementById('pix-modal').style.display = 'flex';
-            document.getElementById('email-form-group').style.display = 'block';
-            document.getElementById('pix-payment-group').style.display = 'none';
-            const emailInput = document.getElementById('user-email');
-            if(emailInput) emailInput.value = '';
-        }
-        async function generatePix() {
-            const emailInput = document.getElementById('user-email');
-            currentEmail = emailInput.value;
-            if (!currentEmail || !validateEmail(currentEmail)) { alert('Por favor, insira um e-mail válido.'); return; }
-            document.getElementById('email-form-group').style.display = 'none';
-            document.getElementById('pix-payment-group').style.display = 'block';
-            try {
-                const response = await fetch('/api/create-payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: currentAmount, email: currentEmail }), });
-                const data = await response.json();
-                if (response.ok) {
-                    document.getElementById('qr-code-image').src = `data:image/png;base64,${data.qrCodeBase64}`;
-                    document.getElementById('pix-code').value = data.qr_code;
-                    currentPaymentId = data.payment_id;
-                    startPaymentCheck(currentPaymentId);
-                } else { document.getElementById('payment-status').innerHTML = `<p style="color: red;">Erro: ${data.details || 'Tente novamente'}</p>`; }
-            } catch (error) { document.getElementById('payment-status').innerHTML = `<p style="color: red;">Erro de comunicação.</p>`; }
-        }
+        
+        // --- FUNÇÕES ANTIGAS (sem grandes alterações) ---
+        function openPixModal(amount) { currentAmount = amount; if(!document.getElementById('pix-modal').innerHTML.trim()){document.getElementById('pix-modal').innerHTML = `<div class="modal-content"><span class="close-button" onclick="closePixModal()">&times;</span><div id="email-form-group"><h2>Insira seu E-mail</h2><p><strong>Entraremos em contato através desse e-mail em caso de vitória.</strong></p><input type="email" id="user-email" placeholder="Seu e-mail aqui" required><button onclick="generatePix()">Continuar</button></div><div id="pix-payment-group" style="display: none;"><h2>Pague com PIX para participar</h2><img id="qr-code-image" src="" style="width:100%; max-width:250px;"><p><strong>PIX Copia e Cola:</strong></p><input type="text" id="pix-code" readonly style="width: 90%; padding: 10px; text-align: center;"><button class="copy-button" onclick="copyPixCode()">Copiar Código PIX</button><div id="copy-message" style="display: none;">Código copiado!</div><hr><div id="payment-status"><div class="loader"></div>Aguardando confirmação...</div><p style="font-weight: bold;">Não feche esta janela.</p></div></div>`;} document.getElementById('pix-modal').style.display = 'flex'; document.getElementById('email-form-group').style.display = 'block'; document.getElementById('pix-payment-group').style.display = 'none'; const emailInput = document.getElementById('user-email'); if(emailInput) emailInput.value = ''; }
+        async function generatePix() { const emailInput = document.getElementById('user-email'); currentEmail = emailInput.value; if (!currentEmail || !validateEmail(currentEmail)) { alert('Por favor, insira um e-mail válido.'); return; } document.getElementById('email-form-group').style.display = 'none'; document.getElementById('pix-payment-group').style.display = 'block'; try { const response = await fetch('/api/create-payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: currentAmount, email: currentEmail }), }); const data = await response.json(); if (response.ok) { document.getElementById('qr-code-image').src = `data:image/png;base64,${data.qrCodeBase64}`; document.getElementById('pix-code').value = data.qr_code; currentPaymentId = data.payment_id; startPaymentCheck(currentPaymentId); } else { document.getElementById('payment-status').innerHTML = `<p style="color: red;">Erro: ${data.details || 'Tente novamente'}</p>`; } } catch (error) { document.getElementById('payment-status').innerHTML = `<p style="color: red;">Erro de comunicação.</p>`; } }
         function validateEmail(email) { const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; return re.test(String(email).toLowerCase()); }
-        function startPaymentCheck(paymentId) {
-            if (paymentCheckInterval) clearInterval(paymentCheckInterval);
-            paymentCheckInterval = setInterval(async () => {
-                try {
-                    const response = await fetch(`/api/consultar-rifa?id=${paymentId}`);
-                    const data = await response.json();
-                    if (data.status === 'approved') {
-                        clearInterval(paymentCheckInterval);
-                        document.getElementById('payment-status').innerHTML = `<p style="color: green;">Aprovado! Redirecionando...</p>`;
-                        setTimeout(() => { window.location.href = `/success.html?ticketId=${data.ticketId}`; }, 2000); 
-                    }
-                } catch (error) { console.error("Erro na verificação..."); }
-            }, 5000);
-        }
+        function startPaymentCheck(paymentId) { if (paymentCheckInterval) clearInterval(paymentCheckInterval); paymentCheckInterval = setInterval(async () => { try { const response = await fetch(`/api/consultar-rifa?id=${paymentId}`); const data = await response.json(); if (data.status === 'approved') { clearInterval(paymentCheckInterval); document.getElementById('payment-status').innerHTML = `<p style="color: green;">Aprovado! Redirecionando...</p>`; setTimeout(() => { window.location.href = `/success.html?ticketId=${data.ticketId}`; }, 2000); } } catch (error) { console.error("Erro na verificação..."); } }, 5000); }
         function closePixModal() { if (paymentCheckInterval) clearInterval(paymentCheckInterval); document.getElementById('pix-modal').style.display='none'; }
         function copyPixCode() { const el = document.getElementById('pix-code'); el.select(); navigator.clipboard.writeText(el.value).then(() => { const msg = document.getElementById('copy-message'); msg.style.display = 'block'; setTimeout(() => { msg.style.display = 'none'; }, 2000); }); }
         function closeMyNumbersModal() { document.getElementById('my-numbers-modal').style.display = 'none'; }
         async function updateWinnerNumber() { try { const response = await fetch('/api/get-winner'); const data = await response.json(); if (response.ok) document.querySelector('.winner-number').textContent = data.number; } catch (error) { console.error("Erro ao buscar número."); } }
-        function startDailyCountdown() {
-            const el = document.getElementById('countdown');
-            if (!el) return;
-            setInterval(() => {
-                const now = new Date(); let target = new Date(now); target.setHours(20, 0, 0, 0);
-                if (now > target) target.setDate(target.getDate() + 1);
-                const dist = target - now;
-                const h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60));
-                const s = Math.floor((dist % (1000 * 60)) / 1000);
-                el.innerHTML = `${(h<10?'0':'')}${h}:${(m<10?'0':'')}${m}:${(s<10?'0':'')}${s}`;
-            }, 1000);
-        }
+        function startDailyCountdown() { const el = document.getElementById('countdown'); if (!el) return; setInterval(() => { const now = new Date(); let target = new Date(now); target.setHours(20, 0, 0, 0); if (now > target) target.setDate(target.getDate() + 1); const dist = target - now; const h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60)); const s = Math.floor((dist % (1000 * 60)) / 1000); el.innerHTML = `${(h<10?'0':'')}${h}:${(m<10?'0':'')}${m}:${(s<10?'0':'')}${s}`; }, 1000); }
     </script>
 </body>
 </html>

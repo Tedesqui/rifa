@@ -8,10 +8,10 @@ export default async function handler(request, response) {
     }
 
     try {
-        const numbers = await kv.get(ticketId);
+        const ticket = await kv.get(`ticket:${ticketId}`);
 
-        if (numbers) {
-            return response.status(200).json({ numbers });
+        if (ticket) {
+            return response.status(200).json({ numbers: ticket.numbers });
         } else {
             return response.status(404).json({ error: 'Bilhete não encontrado ou expirado.' });
         }

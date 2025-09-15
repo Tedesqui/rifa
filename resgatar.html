@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escolha Seus Números</title>
+    <style>
+        :root { --primary-color: #009ee3; --dark-text: #333; --background-color: #f4f4f9; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--background-color); color: var(--dark-text); margin: 0; padding: 20px; box-sizing: border-box; text-align: center; }
+        .container { background-color: #ffffff; padding: 30px 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 600px; margin: 20px auto; }
+        h1 { color: var(--primary-color); }
+        .form-group button { width: 100%; padding: 12px; margin-top: 15px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 1.1em; cursor: pointer; transition: background-color 0.3s; }
+        .form-group button:disabled { background-color: #555; }
+        .number-inputs { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 20px 0; }
+        .number-inputs input { width: 80px; text-align: center; font-size: 1.2em; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .loader { border: 4px solid #f3f3f3; border-radius: 50%; border-top: 4px solid var(--primary-color); width: 20px; height: 20px; animation: spin 2s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loading-view">
+            <h1><div class="loader"></div> Carregando seus bilhetes...</h1>
+        </div>
+        <div id="selection-view" style="display: none;" class="form-group">
+            <h1 id="selection-title"></h1>
+            <p>Parabéns pelo pagamento! Agora escolha seus números da sorte de 5 dígitos (00000-99999).</p>
+            <div id="number-inputs-container" class="number-inputs"></div>
+            <button id="save-numbers-btn" onclick="saveNumbers()">Salvar Meus Números</button>
+            <div id="status-message"></div>
+        </div>
+    </div>
+
+    <script>
+        let claimToken = '';
+        let quantity = 0;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            claimToken = params.get('claimToken');
+            
+            if (!claimToken) {
+                document.getElementById('loading-view').innerHTML = '<h1>Token de resgate inválido.</h1>';
+                return;
+            }
+
+            try {
+                // Pergunta ao servidor quantos números este token pode resgatar
+                const response = await fetch(`/api/get-claim-details?claimToken=${claimToken}`);
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error || 'Não foi possível verificar seu resgate.');
+
+                quantity = data.quantity;
+                document.getElementById('selection-title').textContent = `Você comprou ${quantity} número(s)!`;
+                
+                const inputsContainer = document.getElementById('number-inputs-container');
+                inputsContainer.innerHTML = '';
+                for (let i = 0; i < quantity; i++) {
+                    inputsContainer.innerHTML += `<input type="text" class="number-input" maxlength="5" placeholder="${i + 1}º número">`;
+                }
+                
+                document.getElementById('loading-view').style.display = 'none';
+                document.getElementById('selection-view').style.display = 'block';
+
+            } catch (error) {
+                document.getElementById('loading-view').innerHTML = `<h1>${error.message}</h1>`;
+            }
+        });
+
+        async function saveNumbers() {
+            const numberInputs = document.querySelectorAll('.number-input');
+            const chosenNumbers = [];
+            for (const input of numberInputs) {
+                const num = input.value;
+                if (!/^\d{5}$/.test(num)) {
+                    alert('Por favor, preencha todos os campos com números de 5 dígitos.');
+                    return;
+                }
+                chosenNumbers.push(num);
+            }
+
+            const saveBtn = document.getElementById('save-numbers-btn');
+            const statusDiv = document.getElementById('status-message');
+            saveBtn.disabled = true;
+            statusDiv.innerHTML = '<div class="loader"></div> Salvando...';
+
+            try {
+                const response = await fetch('/api/claim-ticket', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ claimToken: claimToken, numbers: chosenNumbers }), 
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusDiv.innerHTML = '<p style="color: green;">Números salvos! Redirecionando...</p>';
+                    setTimeout(() => {
+                        window.location.href = `/success.html?ticketId=${data.ticketId}`;
+                    }, 2000);
+                } else {
+                    throw new Error(data.error || 'Não foi possível salvar os números.');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<p style="color: red;">${error.message}</p>`;
+                saveBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

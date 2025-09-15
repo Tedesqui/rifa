@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pagamento Aprovado!</title>
     <style>
-        /* Seus estilos (sem alterações) */
         :root { --primary-color: #009ee3; --dark-text: #333; --background-color: #f4f4f9; --numbers-container-color: #e0f7ff; --numbers-text-color: #007bb5; --flag-green-color: #009B3A; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--background-color); color: var(--dark-text); margin: 0; padding: 10px 0; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; min-height: 100vh; text-align: center; }
         .container { background-color: #ffffff; padding: 30px 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 600px; width: 90%; margin: 20px auto; box-sizing: border-box; }
@@ -28,22 +27,24 @@
     <div class="container"><h1>✅ Pagamento Aprovado!</h1><p>Seus números da sorte foram gerados:</p><div class="numbers-container"><p>Seus Números:</p><div id="numbers-placeholder"><div class="loader"></div></div><p id="numbers" style="display: none;"></p></div><p>Guarde bem esses números! Boa sorte!</p></div><div class="container"><h2>🏆 Sorteio Diário 🏆</h2><div class="results-container"><p>O sorteio acontece todos os dias! Contagem regressiva para as <strong>20:00h</strong>:</p><div id="countdown">--:--:--</div><p>Número Vencedor de Hoje:</p><div class="winner-number">Aguardando...</div></div></div><a href="index.html" class="return-button">Voltar para o Início</a>
 
     <script>
-        // NOVA FUNÇÃO: Agenda o recarregamento da página para a meia-noite
-        function scheduleMidnightReload() {
+        // ATUALIZAÇÃO: Esta função agora agenda dois recarregamentos: um à meia-noite e um às 20h.
+        function scheduleDailyReloads() {
             const now = new Date();
-            const tomorrow = new Date(now);
-            tomorrow.setDate(now.getDate() + 1);
-            tomorrow.setHours(0, 0, 5, 0); // 5 segundos após a meia-noite
-
-            const msUntilMidnight = tomorrow - now;
             
-            setTimeout(() => {
-                window.location.reload();
-            }, msUntilMidnight);
-        }
+            const nextDraw = new Date(now);
+            nextDraw.setHours(20, 0, 5, 0); // 20:00:05
+            if (now > nextDraw) {
+                nextDraw.setDate(nextDraw.getDate() + 1);
+            }
+            const msUntilDraw = nextDraw - now;
+            setTimeout(() => { window.location.reload(); }, msUntilDraw);
 
-        function startDailyCountdown() { const el=document.getElementById('countdown'); if (!el) return; setInterval(()=>{ const now=new Date(); let target=new Date(now); target.setHours(20,0,0,0); if (now > target) target.setDate(target.getDate() + 1); const d=target - now; const h=Math.floor((d % (1000*60*60*24))/(1000*60*60)); const m=Math.floor((d % (1000*60*60))/(1000*60)); const s=Math.floor((d % (1000*60))/1000); el.innerHTML=`${(h<10?'0':'')}${h}:${(m<10?'0':'')}${m}:${(s<10?'0':'')}${s}`;}, 1000);}
-        async function updateWinnerNumber() { try { const r=await fetch('/api/get-winner'); const d=await r.json(); if(r.ok){ const el=document.querySelector('.winner-number'); if(el) el.textContent=d.number;}} catch(e){console.error("Failed to fetch winner number:", e);}}
+            const nextMidnight = new Date(now);
+            nextMidnight.setDate(now.getDate() + 1);
+            nextMidnight.setHours(0, 0, 5, 0); // 00:00:05
+            const msUntilMidnight = nextMidnight - now;
+            setTimeout(() => { window.location.reload(); }, msUntilMidnight);
+        }
 
         document.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
@@ -55,8 +56,8 @@
             updateWinnerNumber();
             setInterval(updateWinnerNumber, 30000);
             
-            // ATUALIZAÇÃO: Chama a nova função para agendar o recarregamento
-            scheduleMidnightReload();
+            // ATUALIZAÇÃO: Chama a nova função de agendamento
+            scheduleDailyReloads();
 
             if (!ticketId) {
                 numbersPlaceholder.innerHTML = '<p style="color: red;">ID do bilhete não encontrado.</p>';
@@ -80,6 +81,10 @@
                 }
             }
         });
+
+        // --- OUTRAS FUNÇÕES (sem alterações) ---
+        function startDailyCountdown() { const el=document.getElementById('countdown'); if (!el) return; setInterval(()=>{ const now=new Date(); let target=new Date(now); target.setHours(20,0,0,0); if (now > target) target.setDate(target.getDate() + 1); const d=target - now; const h=Math.floor((d % (1000*60*60*24))/(1000*60*60)); const m=Math.floor((d % (1000*60*60))/(1000*60)); const s=Math.floor((d % (1000*60))/1000); el.innerHTML=`${(h<10?'0':'')}${h}:${(m<10?'0':'')}${m}:${(s<10?'0':'')}${s}`;}, 1000);}
+        async function updateWinnerNumber() { try { const r=await fetch('/api/get-winner'); const d=await r.json(); if(r.ok){ const el=document.querySelector('.winner-number'); if(el) el.textContent=d.number;}} catch(e){console.error("Failed to fetch winner number:", e);}}
     </script>
 </body>
 </html>

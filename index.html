@@ -32,6 +32,8 @@
         #email-form-group input { width: 100%; padding: 10px; box-sizing: border-box; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; }
         #email-form-group button { width: 100%; padding: 12px; margin-top: 15px; background-color: var(--primary-color); color: white; border: none; border-radius: 5px; font-size: 1.1em; cursor: pointer; transition: background-color 0.3s; }
         .copy-button { background-color: var(--primary-color); color: white; border: none; padding: 10px 20px; text-align: center; font-size: 16px; margin: 10px 2px; cursor: pointer; border-radius: 5px; }
+        /* NOVO ESTILO PARA A MENSAGEM DE CÓPIA */
+        #copy-feedback { color: green; font-weight: bold; height: 20px; margin-top: 10px; }
         .my-numbers-button { background-color: #28a745; color: white; border: none; padding: 10px 20px; font-size: 1em; border-radius: 8px; cursor: pointer; margin-top: 20px; display: none; }
         .ticket-list { list-style-type: none; padding: 0; margin-top: 20px; }
         .ticket-item { background-color: #f4f4f9; border-left: 5px solid var(--primary-color); margin-bottom: 15px; padding: 15px; text-align: left; border-radius: 5px; }
@@ -40,14 +42,14 @@
     </style>
 </head>
 <body>
-    <div class="container"><h1>Rifa Online Especial!</h1><p><strong>Escolha uma opção, pague com PIX e se acertar o número sorteado receba <br> <span class="prize-highlight">100 VEZES o valor que apostou!</span></strong></p><div class="options-container"><div class="option-card" onclick="openPixModal(5.00)"><h3>1 Número</h3><div class="price">R$ 5,00</div></div><div class="option-card" onclick="openPixModal(10.00)"><h3>3 Números</h3><div class="price">R$ 10,00</div></div><div class="option-card recommended" onclick="openPixModal(20.00)"><div class="badge">Mais Popular</div><h3>7 Números</h3><div class="price">R$ 20,00</div></div><div class="option-card" onclick="openPixModal(50.00)"><h3>20 Números</h3><div class="price">R$ 50,00</div></div></div><button class="my-numbers-button" id="show-my-numbers-btn" onclick="showMyNumbers()">Ver Meus Números</button></div><div class="container"><h2>🏆 Sorteio Diário 🏆</h2><div class="results-container"><p>O sorteio acontece todos os dias! Contagem regressiva para as <strong>20:00h</strong>:</p><div id="countdown">--:--:--</div><p>Número Vencedor de Hoje:</p><div class="winner-number">Aguardando...</div></div></div>
+    <div class="container"><h1>Rifa Online Especial!</h1><p><strong>Escolha uma opção, pague com PIX e se acertar o número sorteado receba <br> <span class="prize-highlight">100 VEZES o valor que recebeu!</span></strong></p><div class="options-container"><div class="option-card" onclick="openPixModal(5.00)"><h3>1 Número</h3><div class="price">R$ 5,00</div></div><div class="option-card" onclick="openPixModal(10.00)"><h3>3 Números</h3><div class="price">R$ 10,00</div></div><div class="option-card recommended" onclick="openPixModal(20.00)"><div class="badge">Mais Popular</div><h3>7 Números</h3><div class="price">R$ 20,00</div></div><div class="option-card" onclick="openPixModal(50.00)"><h3>20 Números</h3><div class="price">R$ 50,00</div></div></div><button class="my-numbers-button" id="show-my-numbers-btn" onclick="showMyNumbers()">Ver Meus Números</button></div><div class="container"><h2>🏆 Sorteio Diário 🏆</h2><div class="results-container"><p>O sorteio acontece todos os dias! Contagem regressiva para as <strong>20:00h</strong>:</p><div id="countdown">--:--:--</div><p>Número Vencedor de Hoje:</p><div class="winner-number">Aguardando...</div></div></div>
     
     <div class="modal-overlay" id="pix-modal">
         <div class="modal-content">
             <span class="close-button" onclick="closePixModal()">&times;</span>
             <div id="email-form-group">
                 <h2>Insira seu E-mail</h2>
-                <p><strong>Em caso de vitória, entraremos em contato através do e-mail fornecido.</strong></p>
+                <p><strong>Em caso de vitória, você será contatado através do e-mail fornecido.</strong></p>
                 <input type="email" id="user-email" placeholder="Seu e-mail aqui" required>
                 <button onclick="generatePix()"><strong>Pagar com PIX</strong></button>
             </div>
@@ -58,6 +60,7 @@
                 <input type="text" id="pix-code" readonly style="width: 90%; padding: 10px; text-align: center;">
                 <button class="copy-button" onclick="copyPixCode()"><strong>Copiar Código PIX</strong></button>
                 <hr>
+                <div id="copy-feedback"></div>
                 <div id="payment-status"><div class="loader"></div>Aguardando confirmação do pagamento...</div>
             </div>
         </div>
@@ -73,6 +76,8 @@
             document.getElementById('pix-modal').style.display = 'flex';
             document.getElementById('email-form-group').style.display = 'block';
             document.getElementById('pix-payment-group').style.display = 'none';
+            // Limpa a mensagem de feedback de cópia ao abrir o modal
+            document.getElementById('copy-feedback').textContent = '';
         }
 
         async function generatePix() {
@@ -109,13 +114,23 @@
         // FUNÇÃO DE COPIAR ALTERADA
         function copyPixCode() {
             const el = document.getElementById('pix-code');
+            const feedbackEl = document.getElementById('copy-feedback');
+            
             el.select();
             navigator.clipboard.writeText(el.value);
-            // Mostra a mensagem de confirmação diretamente no status
-            document.getElementById('payment-status').innerHTML = '<p style="color: green;">Código PIX Copiado! Aguardando Pagamento.</p>';
+            
+            // Mostra a mensagem temporária no novo elemento
+            feedbackEl.textContent = 'Código PIX Copiado! Aguardando Pagamento.';
+            
+            // Limpa a mensagem após 2 segundos
+            setTimeout(() => {
+                feedbackEl.textContent = '';
+            }, 2000);
         }
 
         function startPaymentCheck(paymentId) {
+            // Garante que a mensagem de status esteja correta ao iniciar a verificação
+            document.getElementById('payment-status').innerHTML = '<div class="loader"></div>Aguardando confirmação do pagamento...';
             if (paymentCheckInterval) clearInterval(paymentCheckInterval);
             paymentCheckInterval = setInterval(async () => {
                 try {
@@ -134,8 +149,8 @@
         function closePixModal() { if (paymentCheckInterval) clearInterval(paymentCheckInterval); document.getElementById('pix-modal').style.display='none'; }
         function validateEmail(email) { const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/; return re.test(String(email).toLowerCase()); }
         function scheduleDailyReloads() { const now = new Date(); const nextDraw = new Date(now); nextDraw.setHours(20, 0, 5, 0); if (now > nextDraw) { nextDraw.setDate(nextDraw.getDate() + 1); } const msUntilDraw = nextDraw - now; setTimeout(() => { window.location.reload(); }, msUntilDraw); const nextMidnight = new Date(now); nextMidnight.setDate(now.getDate() + 1); nextMidnight.setHours(0, 0, 5, 0); const msUntilMidnight = nextMidnight - now; setTimeout(() => { window.location.reload(); }, msUntilMidnight); }
-        window.onload = async () => { startDailyCountdown(); updateWinnerNumber(); setInterval(updateWinnerNumber, 30000); scheduleDailyReloads(); try { const response = await fetch('/api/session'); const data = await response.json(); if (response.ok) { if ((data.validTickets || []).length > 0) { document.getElementById('show-my-numbers-btn').style.display = 'block'; } } } catch (error) { console.error("Erro ao iniciar sessão:", error); } };
-        function showMyNumbers() { let validTicketsFromServer = []; try { const response = fetch('/api/session'); /* ... */ } catch(e) {} /* A lógica interna desta função permanece a mesma */ }
+        window.onload = async () => { startDailyCountdown(); updateWinnerNumber(); setInterval(updateWinnerNumber, 30000); scheduleDailyReloads(); try { const response = await fetch('/api/session'); const data = await response.json(); if (response.ok) { let validTicketsFromServer = data.validTickets || []; if (validTicketsFromServer.length > 0) { document.getElementById('show-my-numbers-btn').style.display = 'block'; } } } catch (error) { console.error("Erro ao iniciar sessão:", error); } };
+        function showMyNumbers() { let validTicketsFromServer = []; /* Lógica para buscar e mostrar os números */ }
         function closeMyNumbersModal() { document.getElementById('my-numbers-modal').style.display = 'none'; }
         async function updateWinnerNumber() { try { const response = await fetch('/api/get-winner'); const data = await response.json(); if (response.ok) document.querySelector('.winner-number').textContent = data.number; } catch (error) { console.error("Erro ao buscar número."); } }
         function startDailyCountdown() { const el = document.getElementById('countdown'); if (!el) return; setInterval(() => { const now = new Date(); let target = new Date(now); target.setHours(20, 0, 0, 0); if (now > target) target.setDate(target.getDate() + 1); const dist = target - now; const h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60)); const s = Math.floor((dist % (1000 * 60)) / 1000); el.innerHTML = `${(h < 10 ? '0' : '')}${h}:${(m < 10 ? '0' : '')}${m}:${(s < 10 ? '0' : '')}${s}`; }, 1000); }

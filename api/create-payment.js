@@ -1,12 +1,9 @@
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
-// Função para obter a data do sorteio (para guardar no metadata)
-function getCurrentDrawDate() {
-    const now = new Date();
-    if (now.getHours() >= 20) {
-        now.setDate(now.getDate() + 1);
-    }
-    return now.toISOString().split('T')[0];
+// Função para obter a quantidade de números pelo valor
+function getQuantityByAmount(amount) {
+    const map = { '5.00': 1, '10.00': 3, '20.00': 7, '50.00': 20 };
+    return map[parseFloat(amount).toFixed(2)] || 0;
 }
 
 export default async function handler(request, response) {
@@ -14,30 +11,29 @@ export default async function handler(request, response) {
         return response.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const { amount, email, numbers } = request.body;
-    const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    const { amount, email } = request.body;
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
 
-    if (!accessToken || !amount || !email || !numbers || !Array.isArray(numbers) || numbers.length === 0) {
+    if (!accessToken || !amount || !email) {
         return response.status(400).json({ error: 'Dados insuficientes.' });
     }
 
     const client = new MercadoPagoConfig({ accessToken });
     const payment = new Payment(client);
-    const drawDate = getCurrentDrawDate();
 
     try {
-        // A lógica de verificação e reserva foi REMOVIDA.
-        // Agora, simplesmente criamos o pagamento com os números escolhidos.
+        const quantity = getQuantityByAmount(amount);
+        if (quantity === 0) throw new Error("Valor inválido.");
+
         const paymentData = {
             body: {
                 transaction_amount: Number(amount),
-                description: `Rifa - Seus Números: ${numbers.join(', ')}`,
+                description: `Rifa Online - Compra de ${quantity} número(s)`,
                 payment_method_id: 'pix',
                 payer: { email: email },
-                date_of_expiration: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // Expira em 10 minutos
+                // Guarda a quantidade de números que o usuário comprou
                 metadata: {
-                    chosen_numbers: numbers.join(','),
-                    draw_date: drawDate
+                    quantity: quantity
                 }
             }
         };

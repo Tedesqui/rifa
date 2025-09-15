@@ -27,12 +27,10 @@
     <div class="container"><h1>✅ Pagamento Aprovado!</h1><p>Seus números da sorte foram gerados:</p><div class="numbers-container"><p>Seus Números:</p><div id="numbers-placeholder"><div class="loader"></div></div><p id="numbers" style="display: none;"></p></div><p>Guarde bem esses números! Boa sorte!</p></div><div class="container"><h2>🏆 Sorteio Diário 🏆</h2><div class="results-container"><p>O sorteio acontece todos os dias! Contagem regressiva para as <strong>20:00h</strong>:</p><div id="countdown">--:--:--</div><p>Número Vencedor de Hoje:</p><div class="winner-number">Aguardando...</div></div></div><a href="index.html" class="return-button">Voltar para o Início</a>
 
     <script>
-        // ATUALIZAÇÃO: Esta função agora agenda dois recarregamentos: um à meia-noite e um às 20h.
         function scheduleDailyReloads() {
             const now = new Date();
-            
             const nextDraw = new Date(now);
-            nextDraw.setHours(20, 0, 5, 0); // 20:00:05
+            nextDraw.setHours(20, 0, 5, 0);
             if (now > nextDraw) {
                 nextDraw.setDate(nextDraw.getDate() + 1);
             }
@@ -41,7 +39,7 @@
 
             const nextMidnight = new Date(now);
             nextMidnight.setDate(now.getDate() + 1);
-            nextMidnight.setHours(0, 0, 5, 0); // 00:00:05
+            nextMidnight.setHours(0, 0, 5, 0);
             const msUntilMidnight = nextMidnight - now;
             setTimeout(() => { window.location.reload(); }, msUntilMidnight);
         }
@@ -55,8 +53,6 @@
             startDailyCountdown();
             updateWinnerNumber();
             setInterval(updateWinnerNumber, 30000);
-            
-            // ATUALIZAÇÃO: Chama a nova função de agendamento
             scheduleDailyReloads();
 
             if (!ticketId) {
@@ -81,10 +77,9 @@
                 }
             }
         });
-
-        // --- OUTRAS FUNÇÕES (sem alterações) ---
-        function startDailyCountdown() { const el=document.getElementById('countdown'); if (!el) return; setInterval(()=>{ const now=new Date(); let target=new Date(now); target.setHours(20,0,0,0); if (now > target) target.setDate(target.getDate() + 1); const d=target - now; const h=Math.floor((d % (1000*60*60*24))/(1000*60*60)); const m=Math.floor((d % (1000*60*60))/(1000*60)); const s=Math.floor((d % (1000*60))/1000); el.innerHTML=`${(h<10?'0':'')}${h}:${(m<10?'0':'')}${m}:${(s<10?'0':'')}${s}`;}, 1000);}
-        async function updateWinnerNumber() { try { const r=await fetch('/api/get-winner'); const d=await r.json(); if(r.ok){ const el=document.querySelector('.winner-number'); if(el) el.textContent=d.number;}} catch(e){console.error("Failed to fetch winner number:", e);}}
+        
+        function startDailyCountdown() { const el = document.getElementById('countdown'); if (!el) return; setInterval(() => { const now = new Date(); let target = new Date(now); target.setHours(20, 0, 0, 0); if (now > target) target.setDate(target.getDate() + 1); const dist = target - now; const h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60)); const s = Math.floor((dist % (1000 * 60)) / 1000); el.innerHTML = `${(h < 10 ? '0' : '')}${h}:${(m < 10 ? '0' : '')}${m}:${(s < 10 ? '0' : '')}${s}`; }, 1000); }
+        async function updateWinnerNumber() { try { const r = await fetch('/api/get-winner'); const d = await r.json(); if (r.ok) { const el = document.querySelector('.winner-number'); if (el) el.textContent = d.number; } } catch (e) { console.error("Failed to fetch winner number:", e); } }
     </script>
 </body>
 </html>

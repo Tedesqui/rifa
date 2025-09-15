@@ -146,7 +146,7 @@
             const msg = document.getElementById('copy-message');
             el.select();
             navigator.clipboard.writeText(el.value);
-            msg.textContent = 'Código PIX copiado. Aguardando Pagamento.';
+            msg.textContent = 'Código PIX copiado! Aguardando Pagamento.';
             msg.style.display = 'block';
             setTimeout(() => {
                 msg.style.display = 'none';

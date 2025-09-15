@@ -42,14 +42,14 @@
     </style>
 </head>
 <body>
-    <div class="container"><h1>Rifa Online Especial!</h1><p><strong>Escolha uma opção, pague com PIX e se acertar o número sorteado receba <br> <span class="prize-highlight">100 VEZES o valor que recebeu!</span></strong></p><div class="options-container"><div class="option-card" onclick="openPixModal(5.00)"><h3>1 Número</h3><div class="price">R$ 5,00</div></div><div class="option-card" onclick="openPixModal(10.00)"><h3>3 Números</h3><div class="price">R$ 10,00</div></div><div class="option-card recommended" onclick="openPixModal(20.00)"><div class="badge">Mais Popular</div><h3>7 Números</h3><div class="price">R$ 20,00</div></div><div class="option-card" onclick="openPixModal(50.00)"><h3>20 Números</h3><div class="price">R$ 50,00</div></div></div><button class="my-numbers-button" id="show-my-numbers-btn" onclick="showMyNumbers()">Ver Meus Números</button></div><div class="container"><h2>🏆 Sorteio Diário 🏆</h2><div class="results-container"><p>O sorteio acontece todos os dias! Contagem regressiva para as <strong>20:00h</strong>:</p><div id="countdown">--:--:--</div><p>Número Vencedor de Hoje:</p><div class="winner-number">Aguardando...</div></div></div>
+    <div class="container"><h1>Rifa Online Especial!</h1><p><strong>Escolha uma opção, pague com PIX e se acertar o número sorteado receba <br> <span class="prize-highlight">100 VEZES o valor que apostou!</span></strong></p><div class="options-container"><div class="option-card" onclick="openPixModal(5.00)"><h3>1 Número</h3><div class="price">R$ 5,00</div></div><div class="option-card" onclick="openPixModal(10.00)"><h3>3 Números</h3><div class="price">R$ 10,00</div></div><div class="option-card recommended" onclick="openPixModal(20.00)"><div class="badge">Mais Popular</div><h3>7 Números</h3><div class="price">R$ 20,00</div></div><div class="option-card" onclick="openPixModal(50.00)"><h3>20 Números</h3><div class="price">R$ 50,00</div></div></div><button class="my-numbers-button" id="show-my-numbers-btn" onclick="showMyNumbers()">Ver Meus Números</button></div><div class="container"><h2>🏆 Sorteio Diário 🏆</h2><div class="results-container"><p>O sorteio acontece todos os dias! Contagem regressiva para as <strong>20:00h</strong>:</p><div id="countdown">--:--:--</div><p>Número Vencedor de Hoje:</p><div class="winner-number">Aguardando...</div></div></div>
     
     <div class="modal-overlay" id="pix-modal">
         <div class="modal-content">
             <span class="close-button" onclick="closePixModal()">&times;</span>
             <div id="email-form-group">
                 <h2>Insira seu E-mail</h2>
-                <p><strong>Em caso de vitória, você será contatado através do e-mail fornecido.</strong></p>
+                <p><strong>Em caso de vitória, entraremos em contato através do e-mail fornecido.</strong></p>
                 <input type="email" id="user-email" placeholder="Seu e-mail aqui" required>
                 <button onclick="generatePix()"><strong>Pagar com PIX</strong></button>
             </div>
